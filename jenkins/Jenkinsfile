@@ -4,7 +4,23 @@ node {
     docker.image('node:lts-buster-slim').inside('-p 3000:3000') {
         withEnv(['CI=true']) {
             stage('Build') {
-                sh 'npm install'
+                sh '''
+                    for attempt in 1 2 3; do
+                        npm install \
+                            --no-audit \
+                            --no-fund \
+                            --fetch-retries=5 \
+                            --fetch-retry-mintimeout=20000 \
+                            --fetch-retry-maxtimeout=120000 \
+                            --fetch-timeout=300000 \
+                            --maxsockets=3 && exit 0
+
+                        echo "npm install gagal, percobaan ke-$attempt"
+                        sleep 10
+                    done
+
+                    exit 1
+                '''
             }
 
             stage('Test') {
